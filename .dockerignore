@@ -1,0 +1,16 @@
+node_modules
+dist
+.git
+.gitignore
+.env
+.env.local
+*.log
+logs/
+.vscode
+.idea
+README.md
+*.md
+tests/
+coverage/
+.nyc_output
+prisma/migrations/dev.db*

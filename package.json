@@ -1,0 +1,48 @@
+{
+  "name": "target-analytic-bot",
+  "version": "1.0.0",
+  "description": "Meta (Facebook Ads) avtomatik hisobot tizimi — har kuni 08:00 da Telegram guruhga yuboriladi",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:generate": "prisma generate",
+    "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset",
+    "lint": "eslint src --ext .ts",
+    "report:run": "tsx src/scripts/run-report-now.ts",
+    "token:check": "tsx src/scripts/check-token.ts",
+    "backfill:sheets": "tsx src/scripts/backfill-sheets.ts",
+    "backfill:fast": "tsx src/scripts/efficient-backfill.ts",
+    "backfill:account": "tsx src/scripts/account-backfill.ts"
+  },
+  "keywords": ["meta", "facebook-ads", "telegram-bot", "analytics", "marketing"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "^5.20.0",
+    "axios": "^1.7.7",
+    "bottleneck": "^2.19.5",
+    "date-fns": "^3.6.0",
+    "date-fns-tz": "^3.2.0",
+    "dotenv": "^16.4.5",
+    "node-cron": "^3.0.3",
+    "pino": "^9.5.0",
+    "telegraf": "^4.16.3",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.4",
+    "@types/node-cron": "^3.0.11",
+    "pino-pretty": "^11.2.2",
+    "prisma": "^5.20.0",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

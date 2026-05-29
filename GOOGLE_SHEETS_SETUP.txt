@@ -1,0 +1,247 @@
+═══════════════════════════════════════════════════════════════════
+  GOOGLE SHEETS WEBHOOK — OSON SETUP (5 daqiqa)
+═══════════════════════════════════════════════════════════════════
+
+  XECH QANDAY:
+  ✗ Cloud Console kerak emas
+  ✗ Service Account kerak emas
+  ✗ JSON credentials kerak emas
+  ✗ Pul to'lash kerak emas
+
+  FAQAT:
+  ✓ Google Sheets
+  ✓ Apps Script (Sheets ichida)
+  ✓ Deploy qilib URL olish
+
+
+═══════════════════════════════════════════════════════════════════
+  1-QADAM: GOOGLE SHEETS YARATISH
+═══════════════════════════════════════════════════════════════════
+
+  1. https://sheets.google.com ga kiring
+
+  2. "+ Blank" tugmasini bosib yangi spreadsheet yarating
+
+  3. Yuqorida nomini o'zgartiring: "Target Analytics Reports"
+
+
+═══════════════════════════════════════════════════════════════════
+  2-QADAM: APPS SCRIPT OCHISH
+═══════════════════════════════════════════════════════════════════
+
+  1. Sheets ichida yuqori menyu: "Extensions" → "Apps Script"
+
+  2. Yangi window ochiladi — bu Apps Script editor
+
+  3. Default kod ko'rinadi:
+        function myFunction() {
+        }
+
+  4. Hammasini O'CHIRIB tashlang (Ctrl+A → Delete)
+
+
+═══════════════════════════════════════════════════════════════════
+  3-QADAM: KODNI PASTE QILISH
+═══════════════════════════════════════════════════════════════════
+
+  1. Loyiha papkasidan APPS_SCRIPT_CODE.gs faylini oching
+     (yo'l: C:\Users\Сomping Uz\Desktop\TargetAnaliticBot\APPS_SCRIPT_CODE.gs)
+
+  2. Faylning HAMMA kontentini nusxa oling (Ctrl+A → Ctrl+C)
+
+  3. Apps Script editor'ga paste qiling (Ctrl+V)
+
+  4. Yuqorida fayl nomini "Code.gs" emas, "TargetBotWebhook" qiling
+     (ixtiyoriy)
+
+  5. Saqlang: Ctrl+S
+     Yoki disketa tugmasini bosing
+
+  6. Loyiha nomini so'rasa: "Target Bot Webhook" deb yozing
+
+
+═══════════════════════════════════════════════════════════════════
+  4-QADAM: WEB APP SIFATIDA DEPLOY QILISH
+═══════════════════════════════════════════════════════════════════
+
+  1. Yuqori o'ng burchakda "Deploy" tugmasini bosing
+
+  2. "New deployment" tanlang
+
+  3. Type Selector — gear icon (⚙) ni bosing → "Web app" tanlang
+
+  4. Deploy ma'lumotlari:
+     - Description: "Target Bot Webhook v1" (ixtiyoriy)
+     - Execute as: "Me (sizning email)"
+     - Who has access: "Anyone"
+       (⚠ MUHIM — bo'lmasa bot kira olmaydi!)
+
+  5. "Deploy" tugmasini bosing
+
+  6. Google sizdan AUTHORIZATION so'raydi:
+     a) "Authorize access" tugmasini bosing
+     b) Google account tanlang
+     c) "Advanced" tugmasini bosing (agar warning chiqsa)
+     d) "Go to Target Bot Webhook (unsafe)" tugmasini bosing
+     e) "Allow" tugmasini bosing
+
+  7. Deploy muvaffaqiyatli bo'lgach, oynada Web app URL ko'rinadi:
+
+        https://script.google.com/macros/s/AKfycbxxxxxx.../exec
+
+     ⚠ BU URL NI NUSXA OLING — keyingi qadamda kerak!
+
+  8. "Done" tugmasini bosing
+
+
+═══════════════════════════════════════════════════════════════════
+  5-QADAM: URL'NI TEKSHIRISH (ixtiyoriy)
+═══════════════════════════════════════════════════════════════════
+
+  Yuqorida olgan URL'ni brauzerda oching. Quyidagi javob ko'rinishi kerak:
+
+     {"ok":true,"service":"Target Analytic Bot Webhook",
+      "info":"POST JSON to this URL"}
+
+  Agar shu chiqsa — webhook ishlayapti ✓
+
+
+═══════════════════════════════════════════════════════════════════
+  6-QADAM: SECRET'NI SOZLASH (xavfsizlik)
+═══════════════════════════════════════════════════════════════════
+
+  Apps Script kodida:
+
+     const SECRET = 'asosIT_sheets_secret_2026';
+
+  Bu qiymatni o'zgartirsangiz — server .env dagi
+  SHEETS_WEBHOOK_SECRET ham bir xil bo'lishi kerak.
+
+  Default qiymat ishlaydi, lekin xavfsiz bo'lsin uchun
+  o'zgartirishni tavsiya qilamiz.
+
+
+═══════════════════════════════════════════════════════════════════
+  7-QADAM: SERVER .env GA YOZISH
+═══════════════════════════════════════════════════════════════════
+
+  Server'ga SSH:
+
+     ssh root@157.180.46.214
+
+  .env ni tahrirlash:
+
+     nano /root/asosIT/target-analytic-bot/.env
+
+  Quyidagi qatorlarni to'ldiring:
+
+     SHEETS_WEBHOOK_URL="https://script.google.com/macros/s/AKfycbxxxxxx.../exec"
+     SHEETS_WEBHOOK_SECRET="asosIT_sheets_secret_2026"
+
+  ⚠ SHEETS_WEBHOOK_SECRET — Apps Script ichidagi SECRET bilan bir xil bo'lsin!
+
+  Saqlash: Ctrl+O → Enter → Ctrl+X
+
+
+═══════════════════════════════════════════════════════════════════
+  8-QADAM: BOTNI RESTART QILISH
+═══════════════════════════════════════════════════════════════════
+
+  pm2 restart target-analytic-bot
+
+  Loglarni ko'rish:
+
+     pm2 logs target-analytic-bot --lines 20 --nostream
+
+
+═══════════════════════════════════════════════════════════════════
+  9-QADAM: TEST QILISH
+═══════════════════════════════════════════════════════════════════
+
+  Telegram'da bot'ga:
+
+     /sheets         — webhook ulanishini tekshirish (ping)
+     /report         — kechagi kun ma'lumotini Sheets'ga yuborish
+     /stats          — bugungi ma'lumotni Sheets'ga
+     /backfill 30    — oxirgi 30 kunni Sheets'ga
+
+  Sheets'ni ochib qarang — 2 ta sheet avtomatik yaratiladi:
+     • Campaign1_Filiallar
+     • Campaign2_LeadForm
+
+
+═══════════════════════════════════════════════════════════════════
+  HAR DOIM YANGI VERSIYA DEPLOY QILGANDA
+═══════════════════════════════════════════════════════════════════
+
+  Apps Script kodini o'zgartirsangiz:
+
+  1. Kodni saqlang (Ctrl+S)
+
+  2. Deploy → Manage deployments
+
+  3. Mavjud deployment yonida pencil icon (✎) bosing
+
+  4. Version dropdown'dan "New version" tanlang
+
+  5. Description yozing va "Deploy" bosing
+
+  ⚠ MUHIM: URL O'ZGARMAYDI agar mavjud deployment'ni
+     "Manage deployments" orqali tahrirlasangiz.
+
+  ⚠ "New deployment" qilsangiz — YANGI URL beradi, .env ni yangilash kerak.
+
+
+═══════════════════════════════════════════════════════════════════
+  MUMKIN BO'LADIGAN XATOLAR
+═══════════════════════════════════════════════════════════════════
+
+  XATO 1: "Authorization required"
+  SABAB:  Deploy paytida authorize qilmagansiz
+  YECHIM: 4-qadam (e) ga qaytib "Allow" bosing
+
+  XATO 2: "Unauthorized" javob keladi
+  SABAB:  Apps Script SECRET va .env SHEETS_WEBHOOK_SECRET farq qilmoqda
+  YECHIM: Ikkalasini bir xil qiling
+
+  XATO 3: brauzerda "Access denied" yoki "Sorry"
+  SABAB:  "Who has access" "Anyone" emas
+  YECHIM: Deploy → Manage → "Anyone" qilib o'zgartiring va re-deploy
+
+  XATO 4: Sheets'ga yozilmayapti
+  SABAB:  Apps Script Sheets bilan bog'lanmagan (alohida script)
+  YECHIM: Apps Script Sheets ICHIDAN ochilgan bo'lishi kerak
+          (Extensions → Apps Script orqali, alohida script.google.com emas)
+
+
+═══════════════════════════════════════════════════════════════════
+  XAVFSIZLIK
+═══════════════════════════════════════════════════════════════════
+
+  • SHEETS_WEBHOOK_SECRET'ni Apps Script'da ham, .env'da ham
+    KUCHLI bo'lsin (random 20+ belgi)
+
+  • Webhook URL ochiq bo'lsa ham, SECRET tekshiruvi orqali
+    himoyalangan — hech kim secret'siz yoza olmaydi
+
+  • Apps Script "Anyone" ruxsati shart, lekin GET so'rovi faqat
+    info qaytaradi (data emas)
+
+  • Production'da SECRET'ni o'zgartirib qo'ying:
+       const SECRET = 'k8sdjf92mxKDi938sdJLk';
+
+
+═══════════════════════════════════════════════════════════════════
+  YAKUN
+═══════════════════════════════════════════════════════════════════
+
+  Tayyor! Endi:
+  • Har kuni 08:00 da — kechagi data avtomatik Sheets'ga
+  • /stats ishlatganda — bugungi data Sheets'ga
+  • /backfill 30 — oxirgi 30 kun Sheets'ga
+
+  Sheets URL'ni guruh adminlar bilan ulashsangiz — har kim
+  o'z analytics dashboard'ini qurishi mumkin (charts, pivot,
+  filters va h.k.).
+
+═══════════════════════════════════════════════════════════════════

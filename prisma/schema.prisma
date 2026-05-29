@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// DailyReport — kunlik umumiy hisobot (har campaign uchun bittadan)
+// ============================================================
+model DailyReport {
+  id                String        @id @default(cuid())
+  reportDate        DateTime      @db.Date
+  campaignType      CampaignType
+  campaignId        String
+
+  totalSpend        Decimal       @db.Decimal(14, 2) @default(0)
+  totalLeads        Int           @default(0)
+  totalReach        Int           @default(0)
+  totalImpressions  Int           @default(0)
+  totalLinkClicks   Int           @default(0)
+
+  status            ReportStatus  @default(PENDING)
+  errorMessage      String?       @db.Text
+
+  sentToTelegram    Boolean       @default(false)
+  telegramMessageId String?
+  sentAt            DateTime?
+
+  branches          BranchStat[]
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@unique([reportDate, campaignType])
+  @@index([reportDate])
+  @@index([status])
+}
+
+// ============================================================
+// BranchStat — filial bo'yicha statistika
+// ============================================================
+model BranchStat {
+  id              String        @id @default(cuid())
+  reportId        String
+  report          DailyReport   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  branchName      String
+  adsetId         String?
+  adsetName       String?
+
+  spend           Decimal       @db.Decimal(14, 2) @default(0)
+  leads           Int           @default(0)
+  cpl             Decimal       @db.Decimal(14, 2) @default(0)
+
+  impressions     Int           @default(0)
+  reach           Int           @default(0)
+  cpm             Decimal       @db.Decimal(14, 4) @default(0)
+  linkClicks      Int           @default(0)
+  ctr             Decimal       @db.Decimal(8, 4)  @default(0)
+  frequency       Decimal       @db.Decimal(8, 4)  @default(0)
+
+  // Campaign 2 (lead form) uchun: spend proporsional taqsimlangan
+  isAllocated     Boolean       @default(false)
+  allocationRatio Decimal?      @db.Decimal(10, 8)
+
+  createdAt       DateTime      @default(now())
+
+  @@index([reportId])
+  @@index([branchName])
+}
+
+// ============================================================
+// LeadFormResponse — Meta lead form javoblari (raw)
+// ============================================================
+model LeadFormResponse {
+  id            String    @id @default(cuid())
+  leadId        String    @unique
+  campaignId    String
+  adsetId       String?
+  formId        String
+
+  branchName    String?
+  rawFieldData  Json
+
+  createdTime   DateTime
+  fetchedAt     DateTime  @default(now())
+
+  @@index([campaignId, createdTime])
+  @@index([branchName])
+}
+
+// ============================================================
+// MetaToken — access tokenlarni saqlash
+// ============================================================
+model MetaToken {
+  id              String   @id @default(cuid())
+  // Encrypted at-rest (AES-256). Plaintext faqat .env da bo'lsa, bu yerga shifrlab yoziladi.
+  accessToken     String   @db.Text
+  tokenType       String   @default("long_lived")
+  expiresAt       DateTime
+  lastRefreshedAt DateTime @default(now())
+  isActive        Boolean  @default(true)
+  metadata        Json?
+  createdAt       DateTime @default(now())
+
+  @@index([isActive, expiresAt])
+}
+
+// ============================================================
+// ApiCallLog — debug uchun API call audit
+// ============================================================
+model ApiCallLog {
+  id          String   @id @default(cuid())
+  endpoint    String
+  method      String   @default("GET")
+  statusCode  Int?
+  duration    Int      // ms
+  requestId   String?
+  errorCode   Int?
+  errorBody   String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  @@index([endpoint, createdAt])
+  @@index([statusCode])
+}
+
+// ============================================================
+// AdminUser — Telegram orqali ro'yxatdan o'tgan adminlar
+// ============================================================
+model AdminUser {
+  id                String   @id @default(cuid())
+  telegramUserId    String   @unique
+  telegramUsername  String?
+  firstName         String?
+  lastName          String?
+  registeredAt      DateTime @default(now())
+  isActive          Boolean  @default(true)
+  addedChats        ReportChat[]
+
+  @@index([telegramUserId])
+}
+
+// ============================================================
+// ReportChat — hisobot yuboriladigan Telegram chatlari
+// ============================================================
+model ReportChat {
+  id              String     @id @default(cuid())
+  chatId          String     @unique
+  chatTitle       String?
+  chatType        String?    // "group", "supergroup", "channel", "private"
+  threadId        String?    // Optional: topic thread ID
+  isActive        Boolean    @default(true)
+
+  addedByAdminId  String?
+  addedBy         AdminUser? @relation(fields: [addedByAdminId], references: [id])
+
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([chatId])
+  @@index([isActive])
+}
+
+// ============================================================
+// Enums
+// ============================================================
+enum CampaignType {
+  CAMPAIGN_1
+  CAMPAIGN_2
+}
+
+enum ReportStatus {
+  PENDING
+  FETCHING
+  COMPLETED
+  FAILED
+  PARTIAL
+}

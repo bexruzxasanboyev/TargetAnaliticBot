@@ -1,0 +1,50 @@
+version: '3.9'
+
+services:
+  app:
+    build: .
+    container_name: target-bot-app
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://target_user:${DB_PASSWORD}@postgres:5432/target_bot?schema=public
+      TZ: Asia/Tashkent
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - target-net
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: target-bot-pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: target_bot
+      POSTGRES_USER: target_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      TZ: Asia/Tashkent
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - target-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U target_user -d target_bot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+    driver: local
+
+networks:
+  target-net:
+    driver: bridge

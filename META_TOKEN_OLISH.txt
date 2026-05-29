@@ -1,0 +1,445 @@
+═══════════════════════════════════════════════════════════════════
+  META ACCESS TOKEN OLISH — TO'LIQ STEP-BY-STEP QO'LLANMA
+═══════════════════════════════════════════════════════════════════
+
+Bu faylda 2 ta usul ko'rsatilgan:
+
+  USUL 1: System User Token (NEVER-EXPIRING) — PRODUCTION uchun TAVSIYA
+  USUL 2: Long-lived User Token (60 kun) — Tezkor sinov uchun
+
+
+═══════════════════════════════════════════════════════════════════
+  BIRINCHI NAVBATDA KERAK BO'LADIGAN NARSALAR
+═══════════════════════════════════════════════════════════════════
+
+  [v] Facebook account (sizning: mayoq2024@gmail.com)
+  [v] Facebook Business Manager account
+  [v] Reklama qilinayotgan Ad Account (URL dagi: act_1216437396501920)
+  [v] Ad Account ga admin ruxsat
+
+
+═══════════════════════════════════════════════════════════════════
+  USUL 1: SYSTEM USER TOKEN (NEVER-EXPIRING) ⭐ TAVSIYA
+═══════════════════════════════════════════════════════════════════
+
+Bu token HECH QACHON eskirmaydi (expires_in: 0).
+Production uchun ENG TO'G'RI yo'l.
+
+
+───────────────────────────────────────────────────────────────────
+  1-QADAM: FACEBOOK APP YARATISH
+───────────────────────────────────────────────────────────────────
+
+App kerak bo'ladi, chunki: App ID + App Secret + Token kerak.
+
+  1. https://developers.facebook.com saytiga kiring
+
+  2. O'ng yuqorida "My Apps" tugmasini bosing
+
+  3. "Create App" tugmasini bosing
+
+  4. "Use Case" tanlash:
+     - "Other" ni tanlang
+     - Next ni bosing
+
+  5. App Type tanlash:
+     - "Business" ni tanlang
+     - Next ni bosing
+
+  6. App ma'lumotlari kiriting:
+     - App Name: Target Analytics Bot (yoki istalgan nom)
+     - App Contact Email: mayoq2024@gmail.com
+     - Business Account: o'zingizning Business Manager'ni tanlang
+
+  7. "Create App" tugmasini bosing
+
+  8. ⚠ MUHIM: App ID va App Secret ni SAQLANG:
+     - Settings → Basic ga kiring
+     - App ID — yuqorida ko'rinadi
+     - App Secret — "Show" tugmasini bosib parolingizni kiriting
+     - Nusxa oling
+
+  📝 .env ga yozasiz:
+     META_APP_ID="123456789012345"
+     META_APP_SECRET="abc123def456..."
+
+
+───────────────────────────────────────────────────────────────────
+  2-QADAM: MARKETING API QO'SHISH
+───────────────────────────────────────────────────────────────────
+
+  1. Chap menyuda "Add Product" ni bosing
+
+  2. "Marketing API" kartochkasida "Set Up" ni bosing
+
+  3. Endi sizning app Marketing API dan foydalana oladi ✓
+
+
+───────────────────────────────────────────────────────────────────
+  3-QADAM: BUSINESS MANAGER'DA SYSTEM USER YARATISH
+───────────────────────────────────────────────────────────────────
+
+System User — bu inson emas, BOT uchun maxsus user.
+Faqat System User eskirmaydigan token bera oladi.
+
+  1. https://business.facebook.com ga kiring
+
+  2. O'ng yuqorida gear icon (⚙) → "Business Settings" ga kiring
+
+  3. Chap menyuda "Users" bo'limini oching → "System Users" ni tanlang
+
+  4. O'rta tomonda "Add" tugmasini bosing
+
+  5. Ma'lumotlarni kiriting:
+     - System User Name: target-bot-system-user
+     - System User Role: Admin (yoki Employee)
+
+  6. "Create System User" tugmasini bosing
+
+
+───────────────────────────────────────────────────────────────────
+  4-QADAM: SYSTEM USER'GA AD ACCOUNT RUXSAT BERISH
+───────────────────────────────────────────────────────────────────
+
+System User yaratilgandan keyin, unga Ad Account ga ruxsat berish kerak.
+
+  1. Hali ham "System Users" sahifasida bo'lishingiz kerak
+     — yaratgan system user'ingizni tanlang
+
+  2. O'ng tomonda "Add Assets" tugmasini bosing
+
+  3. "Ad Accounts" ni tanlang
+
+  4. URL'dagi Ad Account: 1216437396501920 ni topib,
+     checkbox ni belgilang
+
+  5. Partial access menyusida — "Manage campaigns" ni yoqing
+     (yoki "Full control")
+
+  6. "Save Changes" tugmasini bosing
+
+  ✓ Endi system user sizning Ad Account'ingizni o'qiy oladi.
+
+
+───────────────────────────────────────────────────────────────────
+  5-QADAM: SYSTEM USER'GA PAGES RUXSAT BERISH (Lead form uchun)
+───────────────────────────────────────────────────────────────────
+
+⚠ MUHIM: Campaign 2 da lead form dan ma'lumot olish uchun
+Page'ga ruxsat ham kerak.
+
+  1. Yana "Add Assets" tugmasini bosing
+
+  2. "Pages" ni tanlang
+
+  3. Reklama ishlayotgan Page'ni belgilang
+
+  4. "Manage Page" ruxsatlarini yoqing (yoki "Full control")
+
+  5. "Save Changes" tugmasini bosing
+
+
+───────────────────────────────────────────────────────────────────
+  6-QADAM: TOKEN GENERATE QILISH ⭐ ENG MUHIM QADAM
+───────────────────────────────────────────────────────────────────
+
+  1. "System Users" sahifasida system user'ni tanlang
+
+  2. "Generate New Token" tugmasini bosing (yuqorida)
+
+  3. Dialog oynasida:
+
+     A) App'ni tanlang:
+        - 1-qadamda yaratgan app'ingizni tanlang
+
+     B) Token Expiration:
+        - "Never" ni tanlang ⭐ ENG MUHIM!
+
+     C) Permissions (Scopes) — quyidagilarni ALBATTA belgilang:
+
+        ┌─────────────────────────────────────────────────────┐
+        │ ✓ ads_read                                          │
+        │   → Insights, statistika o'qish                     │
+        │                                                     │
+        │ ✓ ads_management                                    │
+        │   → Campaign ma'lumotlari                           │
+        │                                                     │
+        │ ✓ leads_retrieval                                   │
+        │   → Lead form javoblari (Campaign 2 uchun MUHIM!)   │
+        │                                                     │
+        │ ✓ business_management                               │
+        │   → Business Manager resurslari                     │
+        │                                                     │
+        │ ✓ pages_read_engagement                             │
+        │   → Lead form Page bilan bog'liq                    │
+        │                                                     │
+        │ ✓ pages_manage_metadata                             │
+        │   → Form metadata                                   │
+        │                                                     │
+        │ ✓ pages_show_list                                   │
+        │   → Page ro'yxati                                   │
+        └─────────────────────────────────────────────────────┘
+
+  4. "Generate Token" tugmasini bosing
+
+  5. ⚠⚠⚠ DIQQAT: TOKEN'NI BIR MARTA KO'RSATADI!
+     DARHOL nusxa oling va saqlang!
+     (Agar yopib qo'ysangiz, qaytadan generate qilishingizga
+      to'g'ri keladi)
+
+  📝 .env ga yozasiz:
+     META_ACCESS_TOKEN="EAAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx..."
+
+
+───────────────────────────────────────────────────────────────────
+  7-QADAM: TOKEN'NI TEKSHIRISH
+───────────────────────────────────────────────────────────────────
+
+  Variant A — curl bilan:
+
+     curl "https://graph.facebook.com/v21.0/debug_token?input_token=YOUR_TOKEN&access_token=APP_ID|APP_SECRET"
+
+  Variant B — bizning loyihada:
+
+     npm run token:check
+
+  Kutilgan javob:
+
+     {
+       "data": {
+         "app_id": "123456...",
+         "is_valid": true,
+         "expires_at": 0,          ← 0 = NEVER EXPIRES ✓
+         "scopes": ["ads_read", "ads_management", ...]
+       }
+     }
+
+  "expires_at: 0" degani — HECH QACHON eskirmaydi 🎉
+
+
+═══════════════════════════════════════════════════════════════════
+  USUL 2: LONG-LIVED USER TOKEN (60 KUN) — TEZKOR SINOV
+═══════════════════════════════════════════════════════════════════
+
+Agar System User sozlash uchun vaqtingiz bo'lmasa,
+tezkor sinov uchun shu usulni ishlatishingiz mumkin.
+
+
+───────────────────────────────────────────────────────────────────
+  1-QADAM: GRAPH API EXPLORER OCHISH
+───────────────────────────────────────────────────────────────────
+
+  1. https://developers.facebook.com/tools/explorer/ ga kiring
+
+  2. O'ng yuqorida "Meta App" dropdown — o'z app'ingizni tanlang
+
+  3. "User or Page" dropdown — "User Token" ni tanlang
+
+
+───────────────────────────────────────────────────────────────────
+  2-QADAM: PERMISSIONS QO'SHISH
+───────────────────────────────────────────────────────────────────
+
+  1. "Add a Permission" tugmasini bosing
+
+  2. Quyidagilarni belgilang:
+
+     ✓ ads_read
+     ✓ ads_management
+     ✓ leads_retrieval
+     ✓ business_management
+     ✓ pages_read_engagement
+     ✓ pages_manage_metadata
+     ✓ pages_show_list
+
+
+───────────────────────────────────────────────────────────────────
+  3-QADAM: SHORT-LIVED TOKEN OLISH
+───────────────────────────────────────────────────────────────────
+
+  1. "Generate Access Token" tugmasini bosing
+
+  2. Facebook'da login bo'ling va ruxsat bering
+
+  3. Token paydo bo'ladi — uni nusxa oling
+
+  ⚠ Bu SHORT-LIVED TOKEN — atigi 1 soat ishlaydi!
+  Keyingi qadamda 60 kunlik ga almashtiramiz.
+
+
+───────────────────────────────────────────────────────────────────
+  4-QADAM: LONG-LIVED (60 KUN) GA ALMASHTIRISH
+───────────────────────────────────────────────────────────────────
+
+  Variant A — Bash/Linux/Mac terminal uchun:
+
+     curl -G "https://graph.facebook.com/v21.0/oauth/access_token" \
+       -d "grant_type=fb_exchange_token" \
+       -d "client_id=YOUR_APP_ID" \
+       -d "client_secret=YOUR_APP_SECRET" \
+       -d "fb_exchange_token=SHORT_LIVED_TOKEN"
+
+  Variant B — Windows PowerShell uchun:
+
+     $response = Invoke-RestMethod -Uri "https://graph.facebook.com/v21.0/oauth/access_token" -Method Get -Body @{
+         grant_type = "fb_exchange_token"
+         client_id = "YOUR_APP_ID"
+         client_secret = "YOUR_APP_SECRET"
+         fb_exchange_token = "SHORT_LIVED_TOKEN"
+     }
+     $response.access_token
+
+  Variant C — Brauzer orqali (eng oson):
+
+     Quyidagi URL'ga kiring (qiymatlarni o'zgartiring):
+
+     https://graph.facebook.com/v21.0/oauth/access_token?grant_type=fb_exchange_token&client_id=YOUR_APP_ID&client_secret=YOUR_APP_SECRET&fb_exchange_token=SHORT_LIVED_TOKEN
+
+  Javob:
+
+     {
+       "access_token": "EAAxxx...",
+       "token_type": "bearer",
+       "expires_in": 5184000          ← 60 kun (sekundlarda)
+     }
+
+  📝 .env ga yozing:
+     META_ACCESS_TOKEN="EAAxxxxxxxxxxxxxxxxxx..."
+
+  ⚠ Bu token 60 kundan keyin tugaydi — qayta olish kerak.
+
+
+═══════════════════════════════════════════════════════════════════
+  USULLAR TAQQOSLASH
+═══════════════════════════════════════════════════════════════════
+
+  ┌──────────────────────────┬────────────────┬──────────────────┐
+  │ Xususiyat                │ System User ⭐ │ Long-lived       │
+  ├──────────────────────────┼────────────────┼──────────────────┤
+  │ Muddat                   │ Never expires  │ 60 kun           │
+  │ Production uchun         │ ✓ Tavsiya      │ ✗ Doim yangilash │
+  │ Sozlash murakkabligi     │ O'rtacha       │ Oson             │
+  │ Business Manager kerak   │ Ha             │ Yo'q             │
+  │ Inson logout qilsa       │ Ishlaydi       │ Bekor bo'ladi    │
+  └──────────────────────────┴────────────────┴──────────────────┘
+
+  💡 MASLAHAT:
+     Avval USUL 2 bilan tez sinab ko'ring.
+     Loyiha ishlaganidan keyin USUL 1 ga o'ting.
+
+
+═══════════════════════════════════════════════════════════════════
+  YAKUNIY .env NAMUNA
+═══════════════════════════════════════════════════════════════════
+
+Token olganingizdan keyin .env faylingiz shunday bo'lishi kerak:
+
+  # Meta API
+  META_ACCESS_TOKEN="EAAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  META_APP_ID="123456789012345"
+  META_APP_SECRET="abc123def456ghi789"
+  META_AD_ACCOUNT_ID="act_1216437396501920"
+  META_API_VERSION="v21.0"
+  META_CAMPAIGN_1_ID="120241992527790658"
+  META_CAMPAIGN_2_ID="120241994776580658"
+
+Tekshirish komandasi:
+
+  npm run token:check
+
+
+═══════════════════════════════════════════════════════════════════
+  MUMKIN BO'LADIGAN XATOLAR VA YECHIMLARI
+═══════════════════════════════════════════════════════════════════
+
+  ┌────────────────────────────────────────────────────────────────┐
+  │ XATO 1: "Permissions error" / "Insufficient permissions"       │
+  │                                                                │
+  │ SABAB:  System User'da yetarli scope belgilanmagan             │
+  │ YECHIM: Yangi token generate qiling, barcha kerakli            │
+  │         permissions'larni belgilang (6-qadamga qarang)         │
+  └────────────────────────────────────────────────────────────────┘
+
+  ┌────────────────────────────────────────────────────────────────┐
+  │ XATO 2: "Cannot access leads"                                  │
+  │                                                                │
+  │ SABAB:  leads_retrieval ruxsati yo'q yoki Page'ga System       │
+  │         User ruxsat berilmagan                                 │
+  │ YECHIM: 5-qadamga qaytib Page asset qo'shing                   │
+  └────────────────────────────────────────────────────────────────┘
+
+  ┌────────────────────────────────────────────────────────────────┐
+  │ XATO 3: "Ad account not found"                                 │
+  │                                                                │
+  │ SABAB:  System User'ga Ad Account assign qilinmagan            │
+  │ YECHIM: 4-qadamga qaytib Ad Account asset qo'shing             │
+  └────────────────────────────────────────────────────────────────┘
+
+  ┌────────────────────────────────────────────────────────────────┐
+  │ XATO 4: "App must be reviewed"                                 │
+  │                                                                │
+  │ SABAB:  Live mode'da ba'zi permissions uchun App Review kerak  │
+  │ YECHIM: Development mode'da ishlayversin — System User token   │
+  │         uchun App Review SHART EMAS. Buni hozircha             │
+  │         o'tkazib turing.                                       │
+  └────────────────────────────────────────────────────────────────┘
+
+  ┌────────────────────────────────────────────────────────────────┐
+  │ XATO 5: "Token expired" (error code 190)                       │
+  │                                                                │
+  │ SABAB:  Long-lived token 60 kundan keyin tugagan               │
+  │ YECHIM: Yangisini oling YOKI eng yaxshisi —                    │
+  │         System User token'ga o'ting (NEVER expires)            │
+  └────────────────────────────────────────────────────────────────┘
+
+  ┌────────────────────────────────────────────────────────────────┐
+  │ XATO 6: "Invalid OAuth access token"                           │
+  │                                                                │
+  │ SABAB:  Token noto'g'ri ko'chirilgan yoki bo'sh joy qolgan     │
+  │ YECHIM: Token'ni qayta tekshiring, qo'shtirnoq orasida         │
+  │         bo'sh joy yo'qligini tekshiring                        │
+  └────────────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════
+  FOYDALI LINKLAR
+═══════════════════════════════════════════════════════════════════
+
+  • Facebook Developers:
+    https://developers.facebook.com
+
+  • Business Manager:
+    https://business.facebook.com
+
+  • Graph API Explorer:
+    https://developers.facebook.com/tools/explorer/
+
+  • Access Token Debugger:
+    https://developers.facebook.com/tools/debug/accesstoken/
+
+  • Marketing API Documentation:
+    https://developers.facebook.com/docs/marketing-apis
+
+  • Lead Ads Retrieval Guide:
+    https://developers.facebook.com/docs/marketing-api/guides/lead-ads/retrieving
+
+
+═══════════════════════════════════════════════════════════════════
+  YAKUN
+═══════════════════════════════════════════════════════════════════
+
+Token olib .env ga yozganingizdan keyin:
+
+  1. Tekshirish:
+     npm run token:check
+
+  2. Loyihani ishga tushirish:
+     npm run dev
+
+  3. Telegram'da test komanda:
+     /report
+
+Hammasi to'g'ri ishlasa — har kuni 08:00 da avtomatik hisobot
+keladi 🎉
+
+═══════════════════════════════════════════════════════════════════
