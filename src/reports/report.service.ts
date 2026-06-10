@@ -67,9 +67,11 @@ export class ReportService {
    * @param daysAgo 0=bugun, 1=kecha (default)
    */
   async getReports(daysAgo: number = 1) {
-    const { date } = getDayInTz(daysAgo);
+    const { isoDate } = getDayInTz(daysAgo);
+    // Yozish bilan bir xil kalit: kalendar sana UTC-yarim tunda.
+    const reportDate = new Date(`${isoDate}T00:00:00.000Z`);
     return prisma.dailyReport.findMany({
-      where: { reportDate: date },
+      where: { reportDate },
       include: {
         branches: {
           orderBy: [{ leads: 'desc' }, { spend: 'desc' }],

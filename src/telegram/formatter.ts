@@ -1,7 +1,7 @@
 import type { DailyReport, BranchStat } from '@prisma/client';
 import { CampaignType } from '@prisma/client';
 import { format } from 'date-fns';
-import { env } from '../config/env';
+import { BRANCH_NORMALIZATION } from '../config/constants';
 
 type ReportWithBranches = DailyReport & { branches: BranchStat[] };
 
@@ -9,18 +9,20 @@ export interface FormatOptions {
   isToday?: boolean;
 }
 
-const ALLOWED_BRANCHES = ['Algoritm', 'Beruniy', 'Mirobod', "Qo'yliq", 'Sergeli'];
-
-interface CombinedBranch {
+interface Row {
   branchName: string;
   leads: number;
   spend: number;
   cpl: number;
+  impressions: number;
+  reach: number;
+  ctr: number;
+  linkClicks: number;
 }
 
 /**
- * Telegram uchun chiroyli combined hisobot generator.
- * Campaign 1 + Campaign 2 birlashtirilgan, filial bo'yicha.
+ * Telegram uchun chiroyli hisobot generator.
+ * Har bir adset (segment) alohida qator sifatida ko'rsatiladi.
  */
 export class TelegramFormatter {
   format(reports: ReportWithBranches[], options: FormatOptions = {}): string {
@@ -30,11 +32,12 @@ export class TelegramFormatter {
         : '⚠️ Kechagi kun uchun hisobot topilmadi.';
     }
 
-    const reportDate = format(reports[0].reportDate, 'yyyy-MM-dd');
+    // reportDate UTC-yarim tunda saqlanadi — UTC bo'yicha o'qiymiz (server TZ ta'sir qilmasin).
+    const reportDate = reports[0].reportDate.toISOString().slice(0, 10);
     const c1 = reports.find(r => r.campaignType === CampaignType.CAMPAIGN_1);
     const c2 = reports.find(r => r.campaignType === CampaignType.CAMPAIGN_2);
 
-    const combined = this.combine(c1?.branches ?? [], c2?.branches ?? []);
+    const rows = this.buildRows(c1?.branches ?? [], c2?.branches ?? []);
 
     let msg = '';
     if (options.isToday) {
@@ -42,78 +45,97 @@ export class TelegramFormatter {
       msg += `📊 <b>${reportDate} (BUGUN — ${now} gacha)</b>\n`;
       msg += `<i>⚡ Live statistika</i>\n`;
     } else {
-      msg += `📊 <b>${reportDate} | UMUMIY HISOBOT</b>\n`;
+      msg += `📊 <b>${reportDate} | TARGET HISOBOTI</b>\n`;
     }
     msg += `━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-    if (combined.length === 0) {
-      msg += `⚠️ Filial bo'yicha ma'lumot yo'q.\n`;
+    if (rows.length === 0) {
+      msg += `⚠️ Ma'lumot yo'q.\n`;
       return msg;
     }
 
-    // Filiallar bo'yicha
-    for (const b of combined) {
-      msg += this.formatBranch(b);
+    for (const r of rows) {
+      msg += this.formatRow(r);
     }
 
     msg += `━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-    msg += this.formatTotal(combined);
+    msg += this.formatTotal(rows);
 
     return msg;
   }
 
-  private combine(c1: BranchStat[], c2: BranchStat[]): CombinedBranch[] {
-    const map = new Map<string, { leads: number; spend: number }>();
+  private buildRows(c1: BranchStat[], c2: BranchStat[]): Row[] {
+    const map = new Map<string, Row>();
 
-    for (const b of c1) {
-      if (!ALLOWED_BRANCHES.includes(b.branchName)) continue;
-      const cur = map.get(b.branchName) ?? { leads: 0, spend: 0 };
+    const add = (b: BranchStat) => {
+      const name = this.normalizeBranchName(b.branchName);
+      const cur = map.get(name) ?? {
+        branchName: name,
+        leads: 0, spend: 0, cpl: 0,
+        impressions: 0, reach: 0, ctr: 0, linkClicks: 0,
+      };
       cur.leads += b.leads;
       cur.spend += Number(b.spend);
-      map.set(b.branchName, cur);
-    }
-    for (const b of c2) {
-      if (!ALLOWED_BRANCHES.includes(b.branchName)) continue;
-      const cur = map.get(b.branchName) ?? { leads: 0, spend: 0 };
-      cur.leads += b.leads;
-      cur.spend += Number(b.spend);
-      map.set(b.branchName, cur);
-    }
+      cur.impressions += b.impressions;
+      cur.reach += b.reach;
+      cur.linkClicks += b.linkClicks;
+      // CTR — impressions bo'yicha vaznli o'rtacha (vaqtincha yig'indi, pastda bo'linadi)
+      cur.ctr += Number(b.ctr) * b.impressions;
+      map.set(name, cur);
+    };
 
-    const result: CombinedBranch[] = [];
-    for (const branch of ALLOWED_BRANCHES) {
-      const d = map.get(branch);
-      if (d && (d.leads > 0 || d.spend > 0)) {
-        result.push({
-          branchName: branch,
-          leads: d.leads,
-          spend: Number(d.spend.toFixed(2)),
-          cpl: d.leads > 0 ? Number((d.spend / d.leads).toFixed(2)) : 0,
-        });
-      }
+    for (const b of c1) add(b);
+    for (const b of c2) add(b);
+
+    const rows = [...map.values()].filter(r => r.leads > 0 || r.spend > 0);
+    for (const r of rows) {
+      r.spend = Number(r.spend.toFixed(2));
+      r.cpl = r.leads > 0 ? Number((r.spend / r.leads).toFixed(2)) : 0;
+      r.ctr = r.impressions > 0 ? r.ctr / r.impressions : 0;
     }
-    // Lead miqdori bo'yicha kamayuvchi sort
-    return result.sort((a, b) => b.leads - a.leads);
+    return rows.sort((a, b) => b.leads - a.leads || b.spend - a.spend);
   }
 
-  private formatBranch(b: CombinedBranch): string {
+  /** Har xil yozilgan nomlarni bitta guruhga keltirish (eski DB yozuvlari uchun ham) */
+  private normalizeBranchName(name: string): string {
+    const lower = name.toLowerCase();
+    for (const [key, value] of Object.entries(BRANCH_NORMALIZATION)) {
+      if (lower.includes(key)) return value;
+    }
+    return name;
+  }
+
+  private formatRow(r: Row): string {
     return (
-      `🏢 <b>${this.escape(b.branchName)}</b>\n` +
-      `   ├ 📩 Leads: <b>${b.leads}</b>\n` +
-      `   ├ 💰 Spend: <b>${this.fmtSum(b.spend)}</b>\n` +
-      `   └ 💵 CPL: <b>${this.fmtSum(b.cpl)}</b>\n\n`
+      `🏢 <b>${this.escape(r.branchName)}</b>\n` +
+      `   ├ 📩 Leads: <b>${r.leads}</b>\n` +
+      `   ├ 💰 Spend: <b>${this.fmtSum(r.spend)}</b>\n` +
+      `   └ 💵 CPL: <b>${this.fmtSum(r.cpl)}</b>\n\n`
     );
   }
 
-  private formatTotal(branches: CombinedBranch[]): string {
-    const totalLeads = branches.reduce((s, b) => s + b.leads, 0);
-    const totalSpend = branches.reduce((s, b) => s + b.spend, 0);
+  private formatTotal(rows: Row[]): string {
+    const totalLeads = rows.reduce((s, b) => s + b.leads, 0);
+    const totalSpend = rows.reduce((s, b) => s + b.spend, 0);
+    const totalImpr = rows.reduce((s, b) => s + b.impressions, 0);
+    const totalReach = rows.reduce((s, b) => s + b.reach, 0);
+    const totalClicks = rows.reduce((s, b) => s + b.linkClicks, 0);
     const avgCpl = totalLeads > 0 ? totalSpend / totalLeads : 0;
+    // CTR — impressions bo'yicha vaznli o'rtacha
+    const avgCtr = totalImpr > 0
+      ? rows.reduce((s, b) => s + b.ctr * b.impressions, 0) / totalImpr
+      : 0;
 
     let msg = `📈 <b>UMUMIY NATIJA</b>\n`;
     msg += `📩 Leadlar: <b>${totalLeads}</b>\n`;
     msg += `💰 Spend: <b>${this.fmtSum(totalSpend)}</b>\n`;
     msg += `💵 CPL: <b>${this.fmtSum(avgCpl)}</b>\n`;
+    if (totalImpr > 0) {
+      msg += `👁 Impressions: <b>${totalImpr.toLocaleString('en-US')}</b>\n`;
+      msg += `👥 Reach: <b>${totalReach.toLocaleString('en-US')}</b>\n`;
+      msg += `🔗 Link Clicks: <b>${totalClicks.toLocaleString('en-US')}</b>\n`;
+      msg += `📈 CTR: <b>${avgCtr.toFixed(2)}%</b>\n`;
+    }
     return msg;
   }
 
