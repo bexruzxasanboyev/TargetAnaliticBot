@@ -60,6 +60,7 @@ export const BRANCH_NORMALIZATION: Record<string, string> = {
   // Sinf segmentlari — adset nomlari har xil yozilgan bo'lsa ham bitta guruh
   '5-10-11': '5-11-sinflar',
   '5-11': '5-11-sinflar',
+  '5-10': '5-11-sinflar',
   '1-4': '1-4-sinflar',
 };
 
