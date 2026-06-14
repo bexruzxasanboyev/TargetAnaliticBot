@@ -5,7 +5,7 @@ import { insightsService } from '../meta/insights.service';
 import { ReportGenerationError } from '../lib/errors';
 import { env } from '../config/env';
 import { getDayInTz } from '../lib/date';
-import { BRANCH_NORMALIZATION } from '../config/constants';
+import { BRANCH_NORMALIZATION, canonicalizeName } from '../config/constants';
 
 /**
  * Adset nomidan filial nomini ajratib olish.
@@ -24,9 +24,9 @@ function extractBranchName(adsetName: string): string {
   }
 
   // 2. BRANCH_NORMALIZATION dictionary'dan qidirish
-  const lower = adsetName.toLowerCase();
+  const canon = canonicalizeName(adsetName);
   for (const [key, value] of Object.entries(BRANCH_NORMALIZATION)) {
-    if (lower.includes(key)) return value;
+    if (canon.includes(key)) return value;
   }
 
   // 3. Aks holda asl nomni qaytarish
@@ -34,7 +34,7 @@ function extractBranchName(adsetName: string): string {
 }
 
 function normalizeBranch(raw: string): string {
-  const cleaned = raw.toLowerCase().trim().replace(/['`'']/g, '');
+  const cleaned = canonicalizeName(raw).replace(/['`'']/g, '');
   for (const [key, value] of Object.entries(BRANCH_NORMALIZATION)) {
     if (cleaned.includes(key)) return value;
   }

@@ -57,12 +57,32 @@ export const BRANCH_NORMALIZATION: Record<string, string> = {
   koyliq: "Qo'yliq",
   algoritm: 'Algoritm',
   pochemuchka: 'Pochemuchka',
-  // Sinf segmentlari — adset nomlari har xil yozilgan bo'lsa ham bitta guruh
+  // Sinf segmentlari — adset nomlari har xil yozilgan bo'lsa ham bitta guruh.
+  // DIQQAT: bu kalitlar canonicalizeName() dan o'tgan matnga solishtiriladi
+  // (barcha tire variantlari '-' ga, ortiqcha probellar tozalangan).
   '5-10-11': '5-11-sinflar',
   '5-11': '5-11-sinflar',
   '5-10': '5-11-sinflar',
   '1-4': '1-4-sinflar',
 };
+
+/**
+ * Nomni solishtirishdan oldin bir xil ko'rinishga keltiradi:
+ *  - lowercase
+ *  - turli tire belgilari (– — ‑ ‐ − va h.k.) → oddiy '-'
+ *  - tire atrofidagi probellar olib tashlanadi ("5 - 10" → "5-10")
+ *  - ketma-ket probellar bittaga keltiriladi
+ * Shu sabab "5–10", "5 - 10", "5‑10" — hammasi "5-10" ga aylanadi va
+ * bitta guruhga (5-11-sinflar) birlashadi.
+ */
+export function canonicalizeName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[‐‑‒–—―−]/g, '-')
+    .replace(/\s*-\s*/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 // Meta API muhim error code lari
 export const META_ERROR_CODES = {

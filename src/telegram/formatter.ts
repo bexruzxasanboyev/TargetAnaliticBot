@@ -1,7 +1,7 @@
 import type { DailyReport, BranchStat } from '@prisma/client';
 import { CampaignType } from '@prisma/client';
 import { format } from 'date-fns';
-import { BRANCH_NORMALIZATION } from '../config/constants';
+import { BRANCH_NORMALIZATION, canonicalizeName } from '../config/constants';
 
 type ReportWithBranches = DailyReport & { branches: BranchStat[] };
 
@@ -98,9 +98,9 @@ export class TelegramFormatter {
 
   /** Har xil yozilgan nomlarni bitta guruhga keltirish (eski DB yozuvlari uchun ham) */
   private normalizeBranchName(name: string): string {
-    const lower = name.toLowerCase();
+    const canon = canonicalizeName(name);
     for (const [key, value] of Object.entries(BRANCH_NORMALIZATION)) {
-      if (lower.includes(key)) return value;
+      if (canon.includes(key)) return value;
     }
     return name;
   }
