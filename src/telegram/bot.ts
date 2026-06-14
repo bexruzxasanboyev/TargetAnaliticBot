@@ -1,4 +1,4 @@
-import { Telegraf, Context } from 'telegraf';
+import { Telegraf, Context, Markup } from 'telegraf';
 import { env } from '../config/env';
 import { logger } from '../lib/logger';
 import { adminService } from './admin.service';
@@ -25,6 +25,43 @@ async function requireAdmin(ctx: Context): Promise<boolean> {
     return false;
   }
   return true;
+}
+
+/**
+ * Hisobotni qaytadan generatsiya qilib (Meta API'dan), barcha aktiv
+ * guruhlarga yuborish. /report komandasi va "📤 Hisobot yuborish" tugmasi
+ * shu funksiyani chaqiradi.
+ */
+async function generateAndSendReport(ctx: Context): Promise<void> {
+  await ctx.reply(
+    '⏳ <b>Kechagi kun hisoboti</b> Meta API\'dan tayyorlanmoqda...\n' +
+    '<i>~30-60 sekund ketishi mumkin.</i>',
+    { parse_mode: 'HTML' }
+  );
+  try {
+    const { runAccountBackfill } = await import('../scripts/account-backfill');
+    const { sendReport } = await import('./sender');
+    const result = await runAccountBackfill(1);
+    await sendReport(1);
+    await ctx.reply(
+      `✅ Hisobot barcha aktiv guruhlarga yuborildi!\n` +
+      `💰 Spend: $${result.totalSpend.toFixed(2)}\n` +
+      `📩 Leadlar: ${result.totalLeads}`
+    );
+  } catch (err: any) {
+    logger.error({ err }, 'generateAndSendReport xatosi');
+    await ctx.reply(`❌ Xato: ${escapeHtml(err.message)}`, { parse_mode: 'HTML' });
+  }
+}
+
+/**
+ * Boshqaruv menyusi (inline tugmalar) — admin only.
+ */
+function controlMenu() {
+  return Markup.inlineKeyboard([
+    [Markup.button.callback('📤 Hisobotni yuborish', 'send_report')],
+    [Markup.button.callback('🔄 Oxirgini qayta yuborish', 'resend_last')],
+  ]);
 }
 
 // ===================================================================
@@ -56,6 +93,7 @@ bot.command('help', async ctx => {
 
   if (isAdmin) {
     msg += "\n<b>Admin komandalari:</b>\n";
+    msg += "/menu — <b>tugmali boshqaruv paneli</b>\n";
     msg += "/addchat — joriy guruhni hisobot ro'yxatiga qo'shish\n";
     msg += "/removechat — joriy guruhni ro'yxatdan o'chirish\n";
     msg += "/listchats — barcha guruhlar ro'yxati\n";
@@ -137,6 +175,7 @@ bot.command('admin', async ctx => {
   await ctx.reply(
     `✅ <b>Admin sifatida ro'yxatdan o'tdingiz!</b>\n\n` +
     `Endi quyidagi komandalardan foydalanishingiz mumkin:\n` +
+    `/menu — tugmali boshqaruv paneli\n` +
     `/addchat — guruh qo'shish\n` +
     `/listchats — guruhlar ro'yxati\n` +
     `/admins — adminlar ro'yxati\n` +
@@ -286,17 +325,41 @@ bot.command('status', async ctx => {
  */
 bot.command('report', async ctx => {
   if (!(await requireAdmin(ctx))) return;
-  await ctx.reply('⏳ Kechagi kun umumiy hisoboti tayyorlanmoqda...');
+  await generateAndSendReport(ctx);
+});
+
+/**
+ * /menu — boshqaruv tugmalari (admin only)
+ */
+bot.command('menu', async ctx => {
+  if (!(await requireAdmin(ctx))) return;
+  await ctx.reply(
+    '🎛 <b>Boshqaruv paneli</b>\n\n' +
+    '📤 <b>Hisobotni yuborish</b> — Meta API\'dan qaytadan olib, barcha aktiv guruhlarga yuboradi.\n' +
+    '🔄 <b>Oxirgini qayta yuborish</b> — saqlangan oxirgi hisobotni qayta yuboradi (tezroq).',
+    { parse_mode: 'HTML', ...controlMenu() }
+  );
+});
+
+/**
+ * "📤 Hisobotni yuborish" tugmasi
+ */
+bot.action('send_report', async ctx => {
+  await ctx.answerCbQuery('⏳ Tayyorlanmoqda...');
+  if (!(await requireAdmin(ctx))) return;
+  await generateAndSendReport(ctx);
+});
+
+/**
+ * "🔄 Oxirgini qayta yuborish" tugmasi
+ */
+bot.action('resend_last', async ctx => {
+  await ctx.answerCbQuery('🔄 Yuborilmoqda...');
+  if (!(await requireAdmin(ctx))) return;
   try {
-    const { runAccountBackfill } = await import('../scripts/account-backfill');
-    const { sendReport } = await import('./sender');
-    const result = await runAccountBackfill(1);
-    await sendReport(1);
-    await ctx.reply(
-      `✅ Hisobot yuborildi!\n` +
-      `💰 Spend: $${result.totalSpend.toFixed(2)}\n` +
-      `📩 Leadlar: ${result.totalLeads}`
-    );
+    const { sendDailyReport } = await import('./sender');
+    await sendDailyReport();
+    await ctx.reply('✅ Oxirgi hisobot barcha aktiv guruhlarga qayta yuborildi!');
   } catch (err: any) {
     await ctx.reply(`❌ Xato: ${escapeHtml(err.message)}`, { parse_mode: 'HTML' });
   }
